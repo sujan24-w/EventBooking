@@ -13,6 +13,6 @@ router.get("/", (req: Request, res: Response) => {
 router.post("/register", validate(registerSchema), register);
 router.post("/login", validate(loginSchema), login);
 router.get("/me", authMiddleware,getuser);
-router.post("/logout",logout);
+router.post("/logout",authMiddleware,logout);
 
 export  default router;

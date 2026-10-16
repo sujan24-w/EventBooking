@@ -56,14 +56,14 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
       `SELECT id, email, password_hash, role
        FROM users
        WHERE email = $1`,
-      ["email"]
+      [email]
     );
 
      const user = result.rows[0];
       if (!user) {
       res.status(401).json({
         success: false,
-        message: " Email not Found ",
+        message: " Invalid Email or password ",
       });
       return;
     }
@@ -74,7 +74,7 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
      if (!isPasswordValid) {
       res.status(401).json({
         success: false,
-        message: "Invalid  password",
+        message: "Invalid email or  password",
       });
       return;
     }

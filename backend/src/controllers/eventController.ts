@@ -27,7 +27,9 @@ const  sortOptions: Record<string,string>= {
       seats_low: "available_seats ASC",
     };
 
-const conditions: string[] = ["e.starts_at > NOW()", "e.title ILIKE $1"];
+const conditions: string[] = ["e.starts_at > NOW()",
+     "e.title ILIKE $1",
+    "e.is_deleted = FALSE",];
 if (availability === "cancelled") {
   conditions.push("e.is_cancelled = TRUE");
 } 
@@ -185,7 +187,8 @@ Promise<void>=>{
           WHERE status = 'ACTIVE'
           GROUP BY event_id
         ) b ON b.event_id = e.id
-        WHERE e.id = $1
+        WHERE e.id = $1 AND
+        e.is_deleted = FALSE
       `,
       [id]
     );
@@ -282,7 +285,7 @@ const updateEvent= async(
     const toUpdate = req.body;
 
     const existingResult = await pool.query(
-      `SELECT starts_at, ends_at FROM events WHERE id = $1`,
+      `SELECT starts_at, ends_at FROM events WHERE id = $1 AND is_deleated =FALSE`,
       [id]
     );
 
@@ -385,6 +388,7 @@ const updateEvent= async(
             updated_at = NOW()
         WHERE id = $1
           AND is_cancelled = FALSE
+           AND is_deleted = FALSE
         RETURNING *
       `,
       [id]
@@ -427,4 +431,119 @@ const updateEvent= async(
 };
 
 
-export {getEvents, getEventById,createEvent,updateEvent,cancelEvent};
+ const softDeleteEvent = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+        UPDATE events
+        SET is_deleted = TRUE,
+            updated_at = NOW()
+        WHERE id = $1
+          AND is_deleted = FALSE
+        RETURNING id, title, is_deleted
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      const existingEvent = await pool.query(
+        `SELECT id FROM events WHERE id = $1`,
+        [id]
+      );
+
+      if (existingEvent.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Event not found",
+        });
+        return;
+      }
+
+      res.status(409).json({
+        success: false,
+        message: "Event is already deleted",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Event deleted successfully",
+      event: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Soft-delete event failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete event",
+    });
+  }
+};
+
+export const restoreEvent = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+        UPDATE events
+        SET is_deleted = FALSE,
+            updated_at = NOW()
+        WHERE id = $1
+          AND is_deleted = TRUE
+        RETURNING id, title, is_deleted
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      const existingEvent = await pool.query(
+        `SELECT id FROM events WHERE id = $1`,
+        [id]
+      );
+
+      if (existingEvent.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Event not found",
+        });
+        return;
+      }
+
+      res.status(409).json({
+        success: false,
+        message: "Event is not deleted",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Event restored successfully",
+      event: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Restore event failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to restore event",
+    });
+  }
+};
+
+export {getEvents, 
+    getEventById,
+    createEvent,
+    updateEvent,
+    cancelEvent,
+    softDeleteEvent};

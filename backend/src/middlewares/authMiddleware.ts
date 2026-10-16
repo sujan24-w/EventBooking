@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 export interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
-    role: string;
+    role: "USER" | "ADMIN"
   };
 }
 
@@ -29,7 +29,17 @@ console.log(token);
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET!
-    ) as { userId: string; role: string };
+    ) as { userId: string; role:  "USER" | "ADMIN"  };
+    
+ if (!decoded.userId ||
+      !["USER", "ADMIN"].includes(decoded.role)
+    ) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid authentication token",
+      });
+      return;
+    }
 
     req.user = {
       userId: decoded.userId,
