@@ -6,8 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+app.get("/", (_req, res) => {
+  res.json({ status: "ok",success:true,
+    message:"welcome to EventBook API"
+   });
+});  
 
 export default app;
