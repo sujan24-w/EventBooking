@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS events (
 
     title VARCHAR(255) NOT NULL,
 
-    about_event TEXT NOT NULL,
+    description TEXT NOT NULL,
 
     starts_at TIMESTAMPTZ NOT NULL,
 
