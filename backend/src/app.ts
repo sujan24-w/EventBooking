@@ -1,5 +1,6 @@
 import express from "express";
 import authRoute from "./routes/authRoutes"
+import eventRoute from "./routes/eventRoutes"
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -12,6 +13,7 @@ app.use(cookieParser())
 
 //authintication routes
 app.use("/api/auth",authRoute);
+app.use("/api/events",eventRoute);
 
 app.get("/", (_req, res) => {
   res.json({ status: "ok",success:true,
