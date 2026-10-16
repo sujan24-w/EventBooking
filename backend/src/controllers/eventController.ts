@@ -211,5 +211,220 @@ Promise<void>=>{
     }
 
 
+};
+
+
+
+const createEvent = async (req:Request ,
+     res:Response ):Promise<void>=>{
+     
+     try{
+       const {
+      title,
+      description,
+      starts_at,
+      ends_at,
+      venue,
+      total_seats,
+      image_url,
+    } = req.body;
+
+     const result = await pool.query(
+      `
+        INSERT INTO events (
+          title,
+          description,
+          starts_at,
+          ends_at,
+          venue,
+          total_seats,
+          image_url
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `,
+      [
+        title,
+        description,
+        starts_at,
+        ends_at,
+        venue,
+        total_seats,
+        image_url ?? null,
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully",
+      event: result.rows[0],
+    });
+
+    }catch(error){
+      console.error("Create event failed:", error);
+      res.status(500).json({
+      success: false,
+      message: "Failed to create event",
+    });
+   }
+
+
 }
-export {getEvents, getEventById};
+
+
+const updateEvent= async(
+ req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const toUpdate = req.body;
+
+    const existingResult = await pool.query(
+      `SELECT starts_at, ends_at FROM events WHERE id = $1`,
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+      return;
+    }
+
+    const existingEvent = existingResult.rows[0];
+
+    const startsAt = toUpdate.starts_at ?? existingEvent.starts_at;
+    const endsAt = toUpdate.ends_at ?? existingEvent.ends_at;
+
+    if (new Date(endsAt) <= new Date(startsAt)) {
+      res.status(400).json({
+        success: false,
+        message: "End time must be after start time",
+      });
+      return;
+    }
+
+    const fields = Object.keys(toUpdate);
+
+    if (fields.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: "Provide at least one field to update",
+      });
+      return;
+    }
+
+    const allowedFields = [
+      "title",
+      "description",
+      "starts_at",
+      "ends_at",
+      "venue",
+      "total_seats",
+      "image_url",
+    ];
+
+    const setClauses = fields
+      .filter((field) => allowedFields.includes(field))
+      .map((field, index) => `${field} = $${index + 1}`);
+
+    const values = fields
+      .filter((field) => allowedFields.includes(field))
+      .map((field) => toUpdate[field]);
+
+    if (setClauses.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+      return;
+    }
+
+    values.push(id);
+
+    const result = await pool.query(
+      `
+        UPDATE events
+        SET ${setClauses.join(", ")},
+            updated_at = NOW()
+        WHERE id = $${values.length}
+        RETURNING *
+      `,
+      values
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Event updated successfully",
+      event: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Update event failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update event",
+    });
+  }
+};
+
+ const cancelEvent = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+        UPDATE events
+        SET is_cancelled = TRUE,
+            updated_at = NOW()
+        WHERE id = $1
+          AND is_cancelled = FALSE
+        RETURNING *
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      const existingEvent = await pool.query(
+        `SELECT id, is_cancelled FROM events WHERE id = $1`,
+        [id]
+      );
+
+      if (existingEvent.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Event not found",
+        });
+        return;
+      }
+
+      res.status(409).json({
+        success: false,
+        message: "Event is already cancelled",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Event cancelled successfully",
+      event: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Cancel event failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to cancel event",
+    });
+  }
+};
+
+
+export {getEvents, getEventById,createEvent,updateEvent,cancelEvent};
