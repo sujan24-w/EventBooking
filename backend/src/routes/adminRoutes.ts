@@ -16,6 +16,7 @@ import { cancelEvent,
      updateEvent,
      softDeleteEvent,
   restoreEvent,
+  hardDelete,
     } from "../controllers/eventController";
 
 import { getEventBookings } from "../controllers/bookingController";
@@ -31,6 +32,7 @@ router.patch("/:id/restore", restoreEvent);
 router.get("/events/:eventId/bookings", getEventBookings);
 
  router.get("/dashboard", getAdminDashboard);
+ router.delete("/harddelete/:id", hardDelete);
 
 
 export default router;

@@ -425,7 +425,7 @@ const updateEvent= async(
       return;
     }
     //commit after all checks and update 
- await client.query("ROLLBACK");
+ await client.query("COMMIT");
     res.status(200).json({
       success: true,
       message: "Event updated successfully",
@@ -614,11 +614,87 @@ const updateEvent= async(
   }
 };
 
+
+
+
+const   hardDelete =  async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const client = await pool.connect();
+
+  try {
+    const { id } = req.params;
+
+    await client.query("BEGIN");
+
+    // Lock the event so it cannot be deleted concurrently.
+    const eventResult = await client.query(
+      `SELECT id FROM events WHERE id = $1 FOR UPDATE`,
+      [id]
+    );
+
+    if (eventResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
+      res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+      return;
+    }
+
+    // Check whether this event has any bookings.
+    const bookingResult = await client.query(
+      `SELECT 1 FROM bookings WHERE event_id = $1 LIMIT 1`,
+      [id]
+    );
+
+    if (bookingResult.rows.length > 0) {
+      await client.query("ROLLBACK");
+
+      res.status(409).json({
+        success: false,
+        message:
+          "Cannot permanently delete an event that has bookings. Soft delete it instead.",
+      });
+      return;
+    }
+
+    // Permanently delete the event only when no bookings exist.
+    await client.query(
+      `DELETE FROM events WHERE id = $1`,
+      [id]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(200).json({
+      success: true,
+      message: "Event permanently deleted",
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    console.error("Hard delete event error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to permanently delete event",
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
+
 export {getEvents, 
     getEventById,
     createEvent,
     updateEvent,
     cancelEvent,
     softDeleteEvent,
-  restoreEvent
+  restoreEvent,
+  hardDelete
   };

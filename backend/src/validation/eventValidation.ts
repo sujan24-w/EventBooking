@@ -50,11 +50,11 @@ import { z } from "zod";
 
 
   const createEventSchema=  eventFieldSchema.refine(
-    (data) => data.starts_at >new Date(),{
-      message: "End time must be after start time",
+    (data) => new Date(data.starts_at) >new Date(),{
+      message: "Event start time must be in future",
       path: ["starts_at"]}
      ).refine(
-    (data) => data.ends_at > data.starts_at,{
+    (data) =>new Date(data.ends_at) >  new Date(data.starts_at),{
       message: "End time must be after start time",
       path: ["ends_at"]}
   );

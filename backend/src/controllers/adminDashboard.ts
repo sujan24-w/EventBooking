@@ -19,8 +19,8 @@ import { pool } from "../config/database";
           SELECT COUNT(*)
           FROM bookings
           WHERE status = 'ACTIVE'
-        )::int AS active_bookings
-    )
+        )::int AS active_bookings,
+    
      (
           SELECT COUNT(*)
           FROM events
