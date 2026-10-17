@@ -150,7 +150,8 @@ Promise<void>=>{
      res.status(400).json({
         success:false,
         message:" Event   id is missing "
-     })
+     });
+     return
   };
 
    const result = await pool.query(
@@ -279,13 +280,15 @@ const updateEvent= async(
  req: Request,
   res: Response
 ): Promise<void> => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
 
     const toUpdate = req.body;
 
     const existingResult = await pool.query(
-      `SELECT starts_at, ends_at FROM events WHERE id = $1 AND is_deleated =FALSE`,
+      `SELECT starts_at, ends_at FROM events 
+      WHERE id = $1 AND is_deleted =FALSE`,
       [id]
     );
 
@@ -299,16 +302,88 @@ const updateEvent= async(
 
     const existingEvent = existingResult.rows[0];
 
+   if (!toUpdate ||typeof toUpdate !== "object"
+     || Array.isArray(toUpdate) ||
+      Object.keys(toUpdate).length === 0)
+       {
+        await client.query("ROLLBACK");
+      res.status(400).json({
+        success: false,
+        message: "Provide at least one field to update",
+      });
+      return;
+    }
+    const allowedFields = [
+      "title",
+      "description",
+      "starts_at",
+      "ends_at",
+      "venue",
+      "total_seats",
+      "image_url",
+    ];
+    const validFields = Object.keys(toUpdate).filter((field) =>
+      allowedFields.includes(field)
+    );
+
+    if (validFields.length === 0) {
+      await client.query("ROLLBACK");
+      res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+      return;
+    }
+
     const startsAt = toUpdate.starts_at ?? existingEvent.starts_at;
     const endsAt = toUpdate.ends_at ?? existingEvent.ends_at;
 
-    if (new Date(endsAt) <= new Date(startsAt)) {
+     const startDate = new Date(startsAt);
+    const endDate = new Date(endsAt);
+
+     if (
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime())
+    ) {
+       await client.query("ROLLBACK");
+      res.status(400).json({
+        success: false,
+        message: "Invalid event date or time",
+      });
+      return;
+    }
+     if (endDate <= startDate) {
+      await client.query("ROLLBACK");
       res.status(400).json({
         success: false,
         message: "End time must be after start time",
       });
       return;
     }
+      // 5. Prevent reducing seats below active bookings
+    if (toUpdate.total_seats !== undefined) {
+      const activeBookingsResult = await pool.query(
+        `
+          SELECT COUNT(*)::int AS active_bookings
+          FROM bookings
+          WHERE event_id = $1
+            AND status = 'ACTIVE'
+        `,
+        [id]
+      );
+      const activeBookings =
+        activeBookingsResult.rows[0].active_bookings;
+
+      if (toUpdate.total_seats < activeBookings) {
+         await client.query("ROLLBACK");
+        res.status(409).json({
+          success: false,
+          message: `Total seats cannot be less than the ${activeBookings} active bookings`,
+        });
+        return;
+      }
+    }
+
 
     const fields = Object.keys(toUpdate);
 
@@ -320,34 +395,17 @@ const updateEvent= async(
       return;
     }
 
-    const allowedFields = [
-      "title",
-      "description",
-      "starts_at",
-      "ends_at",
-      "venue",
-      "total_seats",
-      "image_url",
-    ];
+    // 6. Build the update query with correct placeholders
+    const setClauses = validFields.map(
+      (field, index) => `${field} = $${index + 1}`
+    );
 
-    const setClauses = fields
-      .filter((field) => allowedFields.includes(field))
-      .map((field, index) => `${field} = $${index + 1}`);
-
-    const values = fields
-      .filter((field) => allowedFields.includes(field))
-      .map((field) => toUpdate[field]);
-
-    if (setClauses.length === 0) {
-      res.status(400).json({
-        success: false,
-        message: "No valid fields provided for update",
-      });
-      return;
-    }
+    const values = validFields.map(
+      (field) => toUpdate[field]
+    );
 
     values.push(id);
-
+  //update non deleated event
     const result = await pool.query(
       `
         UPDATE events
@@ -358,19 +416,34 @@ const updateEvent= async(
       `,
       values
     );
-
+      if (result.rows.length === 0) {
+         await client.query("ROLLBACK");
+      res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+      return;
+    }
+    //commit after all checks and update 
+ await client.query("ROLLBACK");
     res.status(200).json({
       success: true,
       message: "Event updated successfully",
       event: result.rows[0],
     });
   } catch (error) {
+     try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+       console.error("Update event rollback failed:", rollbackError);
+    }
     console.error("Update event failed:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to update event",
     });
+  }finally {
+    client.release();
   }
 };
 
@@ -486,7 +559,7 @@ const updateEvent= async(
   }
 };
 
-export const restoreEvent = async (
+ const restoreEvent = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -546,4 +619,6 @@ export {getEvents,
     createEvent,
     updateEvent,
     cancelEvent,
-    softDeleteEvent};
+    softDeleteEvent,
+  restoreEvent
+  };

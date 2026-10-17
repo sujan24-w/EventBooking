@@ -1,5 +1,6 @@
 
 import type { Response, Request } from "express";
+import type { PoolClient } from "pg";
 import { pool } from "../config/database";
 import type { AuthenticatedRequest } from "../middlewares/authMiddleware";
 
@@ -7,31 +8,32 @@ const createBooking = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
-  const client = await pool.connect();
-
-  try {
-    const { eventId } = req.params;
-    const userId = req.user?.userId;
-  console.log("hello book",eventId, userId);
   
-    if (!userId) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-      return;
-    }
-
-    if (req.user?.role !== "USER") {
-      res.status(403).json({
-        success: false,
-        message: "Only users can book events",
-      });
-      return;
-    }
-
-    await client.query("BEGIN");
-
+  const { eventId } = req.params;
+  const userId = req.user?.userId;
+  
+  
+  if (!userId) {
+    res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+    return;
+  }
+  
+  if (req.user?.role !== "USER") {
+    res.status(403).json({
+      success: false,
+      message: "Only users can book events",
+    });
+    return;
+  }
+  let client: PoolClient | undefined;
+  let transactionStarted = false;
+  try {
+     client = await pool.connect();
+  await client.query("BEGIN");
+    transactionStarted = true;
     // Lock this event while checking and creating the booking.
     const eventResult = await client.query(
       `SELECT id, title, venue, starts_at, total_seats, is_cancelled
@@ -43,7 +45,6 @@ const createBooking = async (
     );
 
     if (eventResult.rows.length === 0) {
-      await client.query("ROLLBACK");
       res.status(404).json({
         success: false,
         message: "Event not found",
@@ -54,7 +55,6 @@ const createBooking = async (
     const event = eventResult.rows[0];
 
     if (event.is_cancelled) {
-      await client.query("ROLLBACK");
       res.status(409).json({
         success: false,
         message: "This event has been cancelled",
@@ -63,7 +63,6 @@ const createBooking = async (
     }
 
     if (new Date(event.starts_at).getTime() <= Date.now()) {
-      await client.query("ROLLBACK");
       res.status(409).json({
         success: false,
         message: "Cannot book an event that has already started",
@@ -82,7 +81,6 @@ const createBooking = async (
     );
 
     if (existingBooking.rows.length > 0) {
-      await client.query("ROLLBACK");
       res.status(409).json({
         success: false,
         message: "You have already booked this event",
@@ -102,7 +100,6 @@ const createBooking = async (
     const seatsLeft: number = event.total_seats - activeBookings;
 
     if (seatsLeft <= 0) {
-      await client.query("ROLLBACK");
       res.status(409).json({
         success: false,
         message: "This event is fully booked",
@@ -118,6 +115,7 @@ const createBooking = async (
     );
 
     await client.query("COMMIT");
+  transactionStarted=false;
 
     res.status(201).json({
       success: true,
@@ -132,8 +130,6 @@ const createBooking = async (
       },
     });
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-
     if (
       typeof error === "object" &&
       error !== null &&
@@ -153,7 +149,17 @@ const createBooking = async (
       message: "Failed to create booking",
     });
   } finally {
-    client.release();
+    if (client) {
+      if (transactionStarted) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (rollbackError) {
+          console.error("Booking rollback failed:", rollbackError);
+        }
+      }
+
+      client.release();
+    }
   }
 };
 

@@ -20,6 +20,20 @@ import { pool } from "../config/database";
           FROM bookings
           WHERE status = 'ACTIVE'
         )::int AS active_bookings
+    )
+     (
+          SELECT COUNT(*)
+          FROM events
+          WHERE is_deleted = FALSE
+            AND is_cancelled = FALSE
+            AND starts_at > NOW()
+        )::int AS upcoming_events,
+
+        (
+          SELECT COUNT(*)
+          FROM users
+          WHERE role = 'USER'
+        )::int AS total_users
     `);
 
     res.status(200).json({
