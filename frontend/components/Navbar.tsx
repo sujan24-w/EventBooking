@@ -31,7 +31,7 @@ export default function Navbar() {
           
           {/* Logo & Brand Name */}
           <Link  onClick={closeMenu} href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform ">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -107,10 +107,10 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-blue-100 bg-white px-4 pt-2 pb-6 space-y-3">
-          <Link href="/" className="block py-2 text-slate-700 font-medium">Home</Link>
-          <Link href="/events" className="block py-2 text-slate-700 font-medium">Browse Events</Link>
+          <Link  onClick={closeMenu} href="/" className="block py-2 text-slate-700 font-medium">Home</Link>
+          <Link  onClick={closeMenu} href="/events" className="block py-2 text-slate-700 font-medium ">Browse Events</Link>
           {user && (
-            <Link href="/my-bookings" className="block py-2 text-slate-700 font-medium">My Bookings</Link>
+            <Link onClick={closeMenu} href="/my-bookings" className="block py-2 text-slate-700 font-medium">My Bookings</Link>
           )}
           <div className="pt-4 border-t border-slate-100 flex flex-col space-y-2">
             {user ? (
