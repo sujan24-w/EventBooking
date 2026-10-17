@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { User } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -62,7 +63,7 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-slate-700">
-                  Hi, {user.name}
+                 Hi, {user?.name}<User size={18} className='inline-block'/>
                 </span>
                 <button
                   onClick={logout}
@@ -91,6 +92,23 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
+            {user?.role === 'ADMIN' ? (
+              <Link
+                href="/admin/dashboard"
+                onClick={closeMenu}
+                className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg"
+              >
+                Dashboard
+              </Link>
+            ) : user ? (
+              <Link
+                href="/my-bookings"
+                onClick={closeMenu}
+                className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg"
+              >
+                Bookings
+              </Link>
+            ) : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"

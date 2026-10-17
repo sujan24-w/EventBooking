@@ -22,7 +22,7 @@ import { z } from "zod";
       .default("soonest"),
 
     availability: z
-      .enum(["all", "available", "soldout", "cancelled"])
+      .enum(["all", "available", "soldout", "cancelled","completed", "upcoming","ongoing"])
       .optional()
       .default("all"),
 

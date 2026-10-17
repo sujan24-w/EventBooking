@@ -29,6 +29,14 @@ import { pool } from "../config/database";
             AND starts_at > NOW()
         )::int AS upcoming_events,
 
+      (
+          SELECT COUNT(*)
+          FROM events
+          WHERE is_deleted = FALSE
+            AND is_cancelled = FALSE
+            AND COALESCE(ends_at, starts_at) < NOW()
+        )::int AS completed_events,
+
         (
           SELECT COUNT(*)
           FROM users

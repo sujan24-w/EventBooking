@@ -47,7 +47,8 @@ export default function EventCard({ event }: EventProps) {
           )}
           <span className={`px-2.5 py-1 text-xs font-bold rounded-full shadow ml-auto ${
             event.event_status === 'UPCOMING' ? 'bg-blue-700 text-white' :
-            event.event_status === 'ONGOING' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-white'
+            event.event_status === 'ONGOING' ? 'bg-amber-600 text-white' : 
+            event.event_status === 'COMPLETED' ? 'bg-green-800 text-white' : 'bg-slate-700 text-white'
           }`}>
             {event.event_status}
           </span>

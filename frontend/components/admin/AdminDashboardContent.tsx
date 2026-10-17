@@ -23,8 +23,9 @@ export default function AdminDashboardContent() {
     description: string;
     action: () => Promise<void>;
   } | null>(null);
-
-  const fetchAdminData = async () => {
+  const [page, setPage] = useState(1);
+  const limit = 15;
+  const fetchAdminData = async (targetPage= page) => {
     setLoading(true);
     setError('');
     try {
@@ -33,7 +34,7 @@ export default function AdminDashboardContent() {
       setDashboardData(dashRes.data);
 
      
-      const eventsRes = await api.get('/admin/events');
+      const eventsRes = await api.get('/admin/events',{params:{page:targetPage,limit}});
       setEventDataAdmin(eventsRes.data.events || []);
     } catch (err: any) {
       console.error('Admin fetch error:', err);
@@ -150,7 +151,7 @@ export default function AdminDashboardContent() {
 
       {/* Dashboard Statistics Overview Cards */}
       {dashboardData?.stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
           <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Events</p>
             <p className="text-3xl font-extrabold text-slate-900 mt-2">{dashboardData.stats.total_events || 0}</p>
@@ -162,6 +163,10 @@ export default function AdminDashboardContent() {
           <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Users</p>
             <p className="text-3xl font-extrabold text-slate-900 mt-2">{dashboardData.stats.upcoming_events || 0}</p>
+          </div>
+           <div className="bg-white p-6 rounded-2xl border border-green-100 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Completed Events</p>
+            <p className="text-3xl font-extrabold text-green-600 mt-2">{dashboardData.stats.completed_events || 0}</p>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Cancelled Events</p>
@@ -255,6 +260,38 @@ export default function AdminDashboardContent() {
               ))}
             </tbody>
           </table>
+          <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <button
+            onClick={() => {
+              if (page > 1) {
+                const newPage = page - 1;
+                setPage(newPage);
+                fetchAdminData(newPage);
+              }
+            }}
+            disabled={page === 1}
+            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl shadow-xs hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            Previous
+          </button>
+          
+          <span className="text-xs font-bold text-slate-600">
+            Page {page}
+          </span>
+
+          <button
+            onClick={() => {
+              const newPage = page + 1;
+              setPage(newPage);
+              fetchAdminData(newPage);
+            }}
+            // Optional: disable Next if fewer items than limit were returned
+            disabled={eventDataAdmin.length < limit}
+            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl shadow-xs hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            Next
+          </button>
+        </div>
         </div>
       </div>
       {/* Custom Confirmation Modal */}
@@ -287,6 +324,7 @@ export default function AdminDashboardContent() {
             </div>
           </div>
         </div>
+        
       )}
       {/* Modals */}
       {isCreateModalOpen && (

@@ -27,23 +27,29 @@ const  sortOptions: Record<string,string>= {
       seats_low: "available_seats ASC",
     };
 
-const conditions: string[] = ["e.starts_at > NOW()",
+const conditions: string[] = [
      "e.title ILIKE $1",
     "e.is_deleted = FALSE",];
 if (availability === "cancelled") {
   conditions.push("e.is_cancelled = TRUE");
 } 
+else if (availability === "upcoming") {
+      conditions.push("e.is_cancelled = FALSE AND NOW() < e.starts_at");
+    }
 else if (availability === "available") {
-  conditions.push("e.is_cancelled = FALSE");
-  conditions.push(
-    "GREATEST(e.total_seats - COALESCE(b.active_bookings, 0), 0) > 0"
-  );
-} 
-else if (availability === "soldout") {
-  conditions.push("e.is_cancelled = FALSE");
-  conditions.push(
-    "GREATEST(e.total_seats - COALESCE(b.active_bookings, 0), 0) = 0"
-  );
+      conditions.push("e.is_cancelled = FALSE AND NOW() < e.starts_at");
+      conditions.push(
+        "GREATEST(e.total_seats - COALESCE(b.active_bookings, 0), 0) > 0"
+      );
+    }
+    else if (availability === "completed") {
+      conditions.push("e.is_cancelled = FALSE AND NOW() > e.ends_at");
+    }
+    else if (availability === "soldout") {
+      conditions.push("e.is_cancelled = FALSE AND NOW() < e.starts_at");
+      conditions.push(
+        "GREATEST(e.total_seats - COALESCE(b.active_bookings, 0), 0) = 0"
+      );
 } 
 else if (!includeCancelled) {
   conditions.push("e.is_cancelled = FALSE");
@@ -77,6 +83,8 @@ else if (!includeCancelled) {
           e.is_cancelled,
           (
         e.created_at >= NOW() - INTERVAL '15 hours'
+        AND e.is_cancelled= FALSE
+        AND NOW() < e.ends_at
          ) AS is_new,
           CASE
           WHEN e.is_cancelled = TRUE THEN 'CANCELLED'
@@ -97,7 +105,7 @@ else if (!includeCancelled) {
           ) AS is_sold_out
         ${fromClause}
         WHERE ${whereClause}
-        ORDER BY ${sortOptions[sort]}, e.id ASC
+        ORDER BY ${sortOptions[sort]|| "e.starts_at ASC"}, e.id ASC
         LIMIT $2 OFFSET $3
       `,
       [`%${search}%`, limit, offset]
@@ -689,7 +697,9 @@ const   hardDelete =  async (
 
 const getAllAdminEvents = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await pool.query(`
+const limit = parseInt(req.query.limit as string) || 15;
+const page = parseInt(req.query.page as string) || 1;
+const offset = (page - 1) * limit;    const result = await pool.query(`
       SELECT 
         e.*,
         (e.total_seats - COALESCE((
@@ -699,7 +709,8 @@ const getAllAdminEvents = async (req: Request, res: Response): Promise<void> => 
         ), 0))::int AS available_seats
       FROM events e
       ORDER BY e.created_at DESC
-    `);
+      LIMIT $1 OFFSET $2
+    `,[limit, offset]);
 
     res.status(200).json({
       success: true,

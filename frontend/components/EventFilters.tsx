@@ -56,6 +56,9 @@ export default function EventFilters({
           className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 outline-none text-slate-900 text-sm bg-white transition"
         >
           <option value="">All Events</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="completed">Completed / Past</option>
           <option value="available">Available Seats</option>
           <option value="soldout">Sold Out</option>
           <option value="cancelled">Cancelled</option>
