@@ -3,19 +3,18 @@ import type { ZodType } from "zod";
 
  const validate = (schema: ZodType) => {
   return (req: Request, res: Response, next: NextFunction): void => {
+   console.log("call from frontend");
+   
     const result = schema.safeParse(req.body);
-  console.log(result);
+ console.log(result?.error?.issues[0].message);
+ 
   
     if (!result.success) {
-      res.status(400).json({
-        message: "Validation failed",
-        errors: result.error.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message,
-        })),
-      });
-      return;
-    }
+  res.status(400).json({
+    message: result.error.issues[0].message,
+  });
+  return;
+}
 
     req.body = result.data;
     next();

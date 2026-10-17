@@ -33,6 +33,7 @@ const register = async (req:Request , res:Response): Promise<void>=>{
     console.log(result.rows[0]);
     
     res.status(201).json({
+      success:true,
       message: "Registration successful",
       user: result.rows[0],
     });

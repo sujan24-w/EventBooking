@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,20 +21,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Direct REST API call to your Express backend
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+     
+      const response = await api.post('auth/login',{
+           email,
+           password  
       });
+       
+      const data = await response.data;
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!response.status) {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Save token & user in AuthContext (localStorage) on successful Express response
       login(data.token, data.user);
       router.push('/');
     } catch (err: any) {
