@@ -21,22 +21,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-     
-      const response = await api.post('auth/login',{
-           email,
-           password  
+      const response = await api.post('/auth/login', {
+        email,
+        password,
       });
-       
-      const data = await response.data;
-
-      if (!response.status) {
-        throw new Error(data.message || 'Login failed');
-      }
+      
+      const data = response.data;
 
       login(data.token, data.user);
-      router.push('/');
+      console.log("user=", data.user);
+
+      // Smart Redirect based on Role
+      if (data.user.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/events');
+      }
     } catch (err: any) {
-      setError(err.message || 'Server error. Is Express running?');
+      setError(err.response?.data?.message || err.message || 'Server error. Is Express running?');
     } finally {
       setLoading(false);
     }

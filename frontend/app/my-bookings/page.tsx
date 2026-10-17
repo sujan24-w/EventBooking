@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Booking {
   booking_id: string;
@@ -18,6 +19,14 @@ interface Booking {
 }
 
 export default function MyBookingsPage() {
+  return (
+    <ProtectedRoute>
+      <MyBookingsContent />
+    </ProtectedRoute>
+  );
+}
+
+ function MyBookingsContent() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

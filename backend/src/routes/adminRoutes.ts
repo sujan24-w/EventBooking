@@ -17,6 +17,7 @@ import { cancelEvent,
      softDeleteEvent,
   restoreEvent,
   hardDelete,
+  getAllAdminEvents
     } from "../controllers/eventController";
 
 import { getEventBookings } from "../controllers/bookingController";
@@ -25,14 +26,15 @@ const router = Router();
 
 router.use(authMiddleware, adminMiddleware);
 router.post("/", validate(createEventSchema), createEvent);
-router.patch("/:id", validate(updateEventSchema), updateEvent);
-router.patch("/:id/cancel", cancelEvent);
-router.delete("/:id", softDeleteEvent);
-router.patch("/:id/restore", restoreEvent);
+router.get("/events", getAllAdminEvents);
 router.get("/events/:eventId/bookings", getEventBookings);
 
- router.get("/dashboard", getAdminDashboard);
- router.delete("/harddelete/:id", hardDelete);
+router.patch("/:id/cancel", cancelEvent);
+router.patch("/:id/restore", restoreEvent);
+router.delete("/harddelete/:id", hardDelete);
+router.delete("/:id", softDeleteEvent);
 
+router.patch("/:id", validate(updateEventSchema), updateEvent);
+ router.get("/dashboard", getAdminDashboard);
 
 export default router;

@@ -687,7 +687,32 @@ const   hardDelete =  async (
   }
 };
 
+const getAllAdminEvents = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        e.*,
+        (e.total_seats - COALESCE((
+          SELECT COUNT(*) 
+          FROM bookings b 
+          WHERE b.event_id = e.id AND b.status = 'ACTIVE'
+        ), 0))::int AS available_seats
+      FROM events e
+      ORDER BY e.created_at DESC
+    `);
 
+    res.status(200).json({
+      success: true,
+      events: result.rows,
+    });
+  } catch (error) {
+    console.error("Failed to fetch admin events:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch admin events",
+    });
+  }
+};
 
 export {getEvents, 
     getEventById,
@@ -696,5 +721,6 @@ export {getEvents,
     cancelEvent,
     softDeleteEvent,
   restoreEvent,
-  hardDelete
+  hardDelete,
+  getAllAdminEvents
   };
