@@ -6,6 +6,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
+export const dynamic = 'force-dynamic';
 export default function EventDetailPage() {
   const { id } = useParams();
   const router = useRouter();
