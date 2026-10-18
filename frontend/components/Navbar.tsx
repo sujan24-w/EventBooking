@@ -4,9 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { User } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  console.log(user);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
  const navRef = useRef<HTMLDivElement>(null);
    const closeMenu = () => setMobileMenuOpen(false);
@@ -63,7 +66,7 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-slate-700">
-                 Hi, {user?.name}<User size={18} className='inline-block'/>
+                 Hi, {user && user.role=== "ADMIN"    ? "Admin": user.name} 
                 </span>
                 <button
                   onClick={logout}
@@ -96,26 +99,27 @@ export default function Navbar() {
               <Link
                 href="/admin/dashboard"
                 onClick={closeMenu}
-                className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg"
+                className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg"
               >
-                Dashboard
+               Admin  Dashboard
               </Link>
             ) : user ? (
+              <div className='flex  ' >
+               <div className='flex items-center mr-2'><span className='text-blue-700'>{user?.name ? user.name.split(' ')[0] : 'User'}</span> <User size={18}/></div>
               <Link
                 href="/my-bookings"
                 onClick={closeMenu}
-                className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg"
-              >
+                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition"
+                >
                 Bookings
               </Link>
+                </div>
             ) : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
+             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
 
@@ -127,15 +131,15 @@ export default function Navbar() {
         <div className="md:hidden border-b border-blue-100 bg-white px-4 pt-2 pb-6 space-y-3">
           <Link  onClick={closeMenu} href="/" className="block py-2 text-slate-700 font-medium">Home</Link>
           <Link  onClick={closeMenu} href="/events" className="block py-2 text-slate-700 font-medium ">Browse Events</Link>
-          {user && (
+          {user && user.role !== 'ADMIN' && (
             <Link onClick={closeMenu} href="/my-bookings" className="block py-2 text-slate-700 font-medium">My Bookings</Link>
           )}
-          <div className="pt-4 border-t border-slate-100 flex flex-col space-y-2">
+          <div className="pt-2  border-slate-100 flex flex-col space-y-2">
             {user ? (
               <button onClick={() => {
                   logout();
                   closeMenu();
-                }}className="w-full text-left py-2 text-red-600 font-medium">Log Out</button>
+                }}className="w-full text-left py-2 text-red-600 font-medium  cursor-pointer">Log Out</button>
             ) : (
               <>
                 <Link href="/login" onClick={closeMenu} className="block py-2 text-center text-blue-600 font-semibold border border-blue-600 rounded-lg">Log In</Link>

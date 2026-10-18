@@ -35,19 +35,19 @@ const [loading, setLoading] = useState(true);
   }, []);
 
   const login = (token: string, newUser: User) => {
-    localStorage.setItem('token', token);
+
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
   };
 
   const logout =async  () => {
     try {
-      // Calls your backend Express logout route to clear the httpOnly cookie
+    
       await api.post('/auth/logout');
     } catch (err) {
       console.error('Backend logout error:', err);
     } finally {
-      localStorage.removeItem('token');
+    
       localStorage.removeItem('user');
       setUser(null);
       window.location.href = '/login';
@@ -55,7 +55,7 @@ const [loading, setLoading] = useState(true);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login,loading, logout }}>
+    <AuthContext.Provider value={{ user, login, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

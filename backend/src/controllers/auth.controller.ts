@@ -54,7 +54,7 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
  try{
       const { email, password } = req.body;
      const result = await pool.query(
-      `SELECT id, email, password_hash, role
+      `SELECT id,name, email, password_hash, role
        FROM users
        WHERE email = $1`,
       [email]
@@ -99,6 +99,7 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
         id: user.id,
         email: user.email,
         role: user.role,
+        name: user.name,
       },
     });
 
