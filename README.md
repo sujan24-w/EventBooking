@@ -2,12 +2,10 @@
  > ** full-stack event booking platform built with Next.js, Node.js/Express, and Supabase (PostgreSQL), featuring secure cross-domain cookie authentication and strict concurrency-safe booking rules.
 
 
-## 🌟 1.  Demo:
-Frontend (Vercel): https://event-booking-sigma-seven.vercel.app
-Backend API (Render): https://eventbooking-pq7r.onrender.com
-GitHub Repository: https://github.com/sujan24-w
-
-
+## 🌟 1.  Demo:## 🌟 1. Demo & Live Links
+- **Frontend (Vercel):** [https://event-booking-sigma-seven.vercel.app](https://event-booking-sigma-seven.vercel.app)
+- **Backend API (Render):** [https://eventbooking-pq7r.onrender.com](https://eventbooking-pq7r.onrender.com)
+- **GitHub Repository:** [https://github.com/sujan24-w](https://github.com/sujan24-w)
 
 
 ### Test Credentials
@@ -82,7 +80,16 @@ npm run seed
  - events: Stores event details (title, venue, starts_at, total_seats, is_cancelled, is_deleted).
 
 - bookings: Connects users to events, enforcing status (ACTIVE vs CANCELLED) to prevent duplicate seat reservations.
+```sql
+-- One active booking per user per event
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_booking
+ON bookings (event_id, user_id)
+WHERE status = 'ACTIVE';
 
+-- Booking query indexes
+CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings (user_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_event_active ON bookings (event_id) WHERE status = 'ACTIVE';
+```
 
 ## 📡 5. API Endpoints
 
@@ -127,26 +134,7 @@ WHERE status = 'ACTIVE';
 
 ---
 
-## 🤖 7. AI Usage Disclosure
-
-In accordance with transparent development standards, AI tools were leveraged to assist with specific workflow stages:
-
-* **Perplexity:** Used for initial schema design research and database architectural planning.
-* **Gemini:** Used for debugging cross-domain cookie transmission issues (`SameSite=None`, CORS, and `withCredentials` behavior between Vercel and Render).
-* **ChatGPT & Gemini:** Used for Tailwind CSS layout structure and boilerplate test suite configurations.
-* *All core business rules, ACID database transactions (`SELECT ... FOR UPDATE`), row-level concurrency mechanics, and express error handlers were hand-coded, verified, and audited.*
-
----
-
-
-### 🔑 8. Logins & Role-Based Access Control (RBAC)
-* **Admin Login (`admin@eventbook.com` / `eventbooksujan@2026`):** Provides administrative privileges to oversee platform metrics, create/edit/cancel/purge events, and inspect all user bookings via `/api/admin/*`.
-* **User Login (`sagar@eventbook.com` / `UserPassword123!`):** Provides standard user access to browse active events, execute secure seat bookings, and manage personal reservations.
-* *Why:* Separation of concerns ensures core administrative tasks and data mutations are strictly protected from standard user interference.
-
----
-
-## 🔒 6. Concurrency-Safe Capacity Enforcement & Anti-Overselling Deep Dive
+## 🔒 . Concurrency-Safe Capacity Enforcement & Anti-Overselling Deep Dive
 
 ### The Problem: Race Conditions & Ticket Overselling
 When an event has **1 seat remaining** and two attendees (User A and User B) click "Book Now" at the exact same millisecond:
@@ -186,13 +174,27 @@ await client.query("COMMIT");
  ```
 
 
+## 🤖 7. AI Usage Disclosure
+
+In accordance with transparent development standards, AI tools were leveraged to assist with specific workflow stages:
+
+* **Perplexity:** Used for initial schema design research and database architectural planning.
+* **Gemini:** Used for debugging cross-domain cookie transmission issues (`SameSite=None`, CORS, and `withCredentials` behavior between Vercel and Render).
+* **ChatGPT & Gemini:** Used for Tailwind CSS layout structure and boilerplate test suite configurations.
+* *All core business rules, ACID database transactions (`SELECT ... FOR UPDATE`), row-level concurrency mechanics, and express error handlers were hand-coded, verified, and audited.TRANSFORMING MONGODB LOGICS TO SQL *
+
+---
+
+
+### 🔑 8. Logins & Role-Based Access Control (RBAC)
+* **Admin Login (`admin@eventbook.com` / `eventbooksujan@2026`):** Provides administrative privileges to oversee platform metrics, create/edit/cancel/purge events, and inspect all user bookings via `/api/admin/*`.
+* **User Login (`sagar@eventbook.com` / `UserPassword123!`):** Provides standard user access to browse active events, execute secure seat bookings, and manage personal reservations.
+* *Why:* Separation of concerns ensures core administrative tasks and data mutations are strictly protected from standard user interference.
+
+---
+
+
 ## Tools Used & Their Purposes
- * Next.js (App Router): Frontend framework for server/client rendering and routing.
-
-*  Express.js & Node.js: Backend server runtime and middleware routing architecture.
-
-*  PostgreSQL & Supabase: Relational database for ACID transactions and persistent storage.
-
 *  Axios: HTTP client configured with credentials and Next.js rewrite proxy for secure first-party cookie transmission.
 
 *  Jest & Supertest: Automated unit and integration testing frameworks for business logic and endpoint validation.
@@ -204,3 +206,6 @@ await client.query("COMMIT");
   * Redis-based rate limiting on authentication and booking endpoints.
   * Waitlist automation system to automatically grant seats when active bookings are cancelled.
 ---
+
+
+* Building EventBook has been an incredible full-stack learning experience. Working through cross-domain cookie authentication hurdles, implementing ACID transactions with FOR UPDATE row locks, and tying it together with Next.js gave me a deep appreciation for building good  web applications.

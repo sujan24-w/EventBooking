@@ -208,15 +208,15 @@ export default function AdminDashboardContent() {
                   </td>
                  <td className="p-4">
   {evt.is_deleted ? (
-    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+    <span className="px-2.5 py-1 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 border border-slate-200">
       Deleted (Archived)
     </span>
   ) : evt.is_cancelled ? (
-    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700">
+    <span className="px-2.5 py-1 text-xs font-bold rounded-xl bg-red-100 text-red-700">
       Cancelled
     </span>
   ) : (
-    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+    <span className={`px-2.5 py-1 text-xs font-bold rounded-xl  ${
       evt.event_status === 'COMPLETED'
         ? 'bg-blue-100 text-blue-700'
         : evt.event_status === 'UPCOMING'
@@ -235,7 +235,7 @@ export default function AdminDashboardContent() {
                       onClick={() => setSelectedEventForBookings(evt)}
                       className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition"
                     >
-                      Bookings
+                      Booked By  
                     </button>
                     <button
                       onClick={() => { setEditingEvent(evt); setIsCreateModalOpen(true); }}

@@ -702,6 +702,12 @@ const page = parseInt(req.query.page as string) || 1;
 const offset = (page - 1) * limit;    const result = await pool.query(`
       SELECT 
         e.*,
+      CASE
+      WHEN e.is_cancelled = TRUE THEN 'CANCELLED'
+      WHEN NOW() < e.starts_at THEN 'UPCOMING'
+      WHEN NOW() < e.ends_at THEN 'ONGOING'
+      ELSE 'COMPLETED'
+    END AS event_status,
         (e.total_seats - COALESCE((
           SELECT COUNT(*) 
           FROM bookings b 
