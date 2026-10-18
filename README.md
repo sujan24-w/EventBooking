@@ -8,15 +8,31 @@ Backend API (Render): https://eventbooking-pq7r.onrender.com
 GitHub Repository: https://github.com/sujan24-w
 
 
-## 🚀 2. Test Credentials
-| Role | Email | Password |
-|:-- |:--   |:--
-| **Admin** | **admin@eventbook.com** | | **eventbooksujan@2026 ** |     
-   
-| **Attendee1** | **sagar@eventbook.com ** | | **UserPassword123!** |  
+## 🛠️ 2. Tech Stack
 
-| **Attendee2** | **sujal@eventbook.com** | | **UserPassword123!** |  
- 
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | **Next.js + TypeScript** | Server-rendered pages, client routing, and responsive UI |
+| **Styling** | **Tailwind CSS** | Clean, mobile-friendly design with fallback graphics |
+| **Backend** | **Node.js + Express (TypeScript)** | RESTful API with explicit transaction management |
+| **Database** | **Supabase (PostgreSQL)** | Relational storage with ACID row-level locking (`pg.Pool`) |
+| **Authentication**| **JWT in HTTP-only Cookies** | Cross-domain cookie authentication (`SameSite=None`, `Secure`) |
+
+---
+
+
+### Test Credentials
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin@eventbook.com` | `eventbooksujan@2026` |
+| **Attendee 1** | `sagar@eventbook.com` | `UserPassword123!` |
+| **Attendee 2** | `sujal@eventbook.com` | `UserPassword123!` |
+
+---
+
+
+
+
 
 
 ## 🔒 3. Concurrency-Safe Capacity Enforcement & Anti-Overselling Deep Dive
@@ -29,6 +45,59 @@ When an event has **1 seat remaining** and two attendees (User A and User B) cli
 4. User B inserts booking #2 (**OVERSELL ERROR: 2 seats sold for capacity 1!**)
 
 
+
+
+
+
+## 💻  Setup & Run Instructions
+
+### Prerequisites
+- Nodeejs v22.16.0
+- Supabase PostgreSQL  pool  coonecting String 
+
+### Step 1: Database Migration & Seeding
+```bash
+# Navigate to backend
+cd backend
+
+# Install dependencies
+npm install
+
+# Run database schema migration
+npm run migrate
+
+# (Optional) Seed initial demo accounts and sample events
+npm run seed
+```
+
+# 🗄️ 4. Data Model & Architecture
+### The application uses three core PostgreSQL tables:
+
+- users: Stores user accounts, hashed passwords (bcryptjs), and user roles (ADMIN vs USER).
+
+ - events: Stores event details (title, venue, starts_at, total_seats, is_cancelled, is_deleted).
+
+- bookings: Connects users to events, enforcing status (ACTIVE vs CANCELLED) to prevent duplicate seat reservations.
+
+
+
+### Step I: Start Backend Server
+```bash
+cd backend
+npm run dev
+# Server running at http://localhost:5000
+```
+
+---
+
+### Step II: Start Frontend Client
+```bash
+# Open a new terminal
+cd frontend
+npm install
+npm run dev
+# Frontend running at http://localhost:5173
+```
 
 ```sql
 
@@ -48,50 +117,8 @@ WHERE status = 'ACTIVE';
 ```
 
 
-
-
-## 💻  Setup & Run Instructions
-
-### Prerequisites
-- Node.js (v18+)
-- Supabase PostgreSQL  pool  coonecting String 
-
-### Step 1: Database Migration & Seeding
-```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-npm install
-
-# Run database schema migration
-npm run migrate
-
-# (Optional) Seed initial demo accounts and sample events
-npm run seed
-```
-
-
-### Step 2: Start Backend Server
-```bash
-cd backend
-npm run dev
-# Server running at http://localhost:5000
-```
-
 ---
-
-### Step 3: Start Frontend Client
-```bash
-# Open a new terminal
-cd frontend
-npm install
-npm run dev
-# Frontend running at http://localhost:5173
-```
-
----
-
+# Features
 Event Browsing & Booking: Browse upcoming events, view details, and book seats in real time.
 
 User Dashboard: View and manage personal event bookings.
@@ -99,3 +126,82 @@ User Dashboard: View and manage personal event bookings.
 Responsive UI: Clean, modern interface built with React, TypeScript, and Tailwind CSS.
 
 Dynamic Fallbacks: Automated image fallbacks for events without custom cover photos.
+---
+
+
+
+# 🔒 Concurrency Control & Database Locking Deep Dive
+
+ To meet Section 11 (Bonus) and fulfill core anti-overselling business rules, the backend implements explicit PostgreSQL row-level locks (SELECT ... FOR UPDATE) inside an ACID database transaction.
+
+ ```sql
+ // 1. Connect client and begin transaction
+client = await pool.connect();
+await client.query("BEGIN");
+
+// 2. Lock event row strictly using FOR UPDATE
+const eventResult = await client.query(
+  `SELECT id, title, venue, starts_at, total_seats, is_cancelled
+   FROM events WHERE id = $1 AND is_deleted = FALSE FOR UPDATE`,
+  [eventId]
+);
+
+// 3. Dynamic active booking check & seat calculation under lock
+const countResult = await client.query(
+  `SELECT COUNT(*)::int AS active_bookings FROM bookings 
+   WHERE event_id = $1 AND status = 'ACTIVE'`,
+  [eventId]
+);
+
+const activeBookings = countResult.rows[0].active_bookings;
+if (event.total_seats - activeBookings <= 0) {
+  // Event is sold out -> Rollback transaction
+  res.status(409).json({ success: false, message: "This event is fully booked" });
+  return;
+}
+
+// 4. Insert active booking and COMMIT
+await client.query("COMMIT");
+ ```
+
+## 📡 6. API Endpoints
+
+### 🔑 Authentication
+* **`POST /api/auth/register`** – Register a new account.
+* **`POST /api/auth/login`** – Login and set HTTP-only authentication cookie.
+* **`POST /api/auth/logout`** – Clear auth cookie.
+
+### 📅 Events
+* **`GET /api/events`** – List events with search and server-side pagination.
+* **`POST /api/events`** – Create new event (Admin only).
+* **`PUT /api/events/:id`** – Edit event details (Admin only).
+* **`DELETE /api/events/:id`** – Delete event (Admin only).
+* **`GET /api/events/:id/attendees`** – View registered attendees (Admin only).
+
+### 🎟️ Bookings
+* **`POST /api/events/:id/book`** – Concurrency-safe seat reservation (`USER` only).
+* **`GET /api/bookings/my`** – Retrieve personal active/past bookings.
+* **`DELETE /api/bookings/:id`** – Cancel active booking and free up capacity.
+
+
+
+---
+
+## 🤖 7. AI Usage Disclosure
+
+In accordance with transparent development standards, AI tools were leveraged to assist with specific workflow stages:
+
+* **Perplexity:** Used for initial schema design research and database architectural planning.
+* **Gemini:** Used for debugging cross-domain cookie transmission issues (`SameSite=None`, CORS, and `withCredentials` behavior between Vercel and Render).
+* **ChatGPT & Gemini:** Used for Tailwind CSS layout structure and boilerplate test suite configurations.
+* *All core business rules, ACID database transactions (`SELECT ... FOR UPDATE`), row-level concurrency mechanics, and express error handlers were hand-coded, verified, and audited.*
+
+---
+
+## 🔮 8. Known Issues & Next Steps
+
+* **Render Free Tier Cold Starts:** The backend API on Render's free tier spins down after periods of inactivity, causing an initial ~30-second latency on the first request.
+* **Future Enhancements:** 
+  * Email confirmation receipts featuring dynamic QR codes for physical venue check-ins.
+  * Redis-based rate limiting on authentication and booking endpoints.
+  * Waitlist automation system to automatically grant seats when active bookings are cancelled.
