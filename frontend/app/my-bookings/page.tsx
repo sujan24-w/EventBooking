@@ -176,15 +176,37 @@ export default function MyBookingsPage() {
                     View Event
                   </Link>
 
-                  {b.booking_status === 'ACTIVE' && (
-                    <button
-                      onClick={() => setBookingToCancel(b)}
-                      disabled={cancellingId === b.booking_id}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold shadow-sm transition disabled:opacity-50"
-                    >
-                      Cancel Booking
-                    </button>
-                  )}
+                 {b.booking_status === 'ACTIVE' && (
+  (() => {
+    const isPastEvent = new Date(b.starts_at) <= new Date();
+
+    if (isPastEvent) {
+      return (
+        <span className="px-3 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-xl border border-slate-200">
+          Cannot Be Cancelled (Past)
+        </span>
+      );
+    }
+
+    if (b.event_cancelled) {
+      return (
+        <span className="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+          Event Cancelled
+        </span>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => setBookingToCancel(b)}
+        disabled={cancellingId === b.booking_id}
+        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold shadow-sm transition disabled:opacity-50"
+      >
+        Cancel Booking
+      </button>
+    );
+  })()
+)}
                 </div>
 
               </div>
