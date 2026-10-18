@@ -1,13 +1,14 @@
  'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-export const dynamic = 'force-dynamic';
-export default function EventDetailPage() {
+
+ function EventDetailContent() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -262,5 +263,18 @@ export default function EventDetailPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function EventDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center py-32">
+        <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-slate-500 text-sm font-medium">Loading event details...</p>
+      </div>
+    }>
+      <EventDetailContent />
+    </Suspense>
   );
 }
