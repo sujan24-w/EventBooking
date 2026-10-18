@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals';
 describe('EventBook Core Business Rules', () => {
   test('1. Double booking rule check', () => {
     const userBookings = [{ eventId: 'event-1', status: 'ACTIVE' }];
