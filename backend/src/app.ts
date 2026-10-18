@@ -10,10 +10,14 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser())
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,  
+  /\.vercel\.app$/
+].filter((origin): origin is string | RegExp => origin !== undefined);
+
 app.use(
   cors({
-    origin: [ process.env.FRONTEND_URL || "", "http://localhost:3000",
-    /\.vercel\.app$/],
+    origin: allowedOrigins,
     credentials: true,
   })
 );

@@ -13,7 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean,
-  login: (token: string, user: User) => void;
+  login: (user: User) => void;
   logout: () => Promise<void>;
 }
 
@@ -29,14 +29,14 @@ const [loading, setLoading] = useState(true);
         setUser(JSON.parse(savedUser));
       } catch (e) {
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
+       
       }
     }
     setLoading(false);
   }, []);
 
-  const login = (token: string, newUser: User) => {
-    localStorage.setItem('token', token);
+  const login = ( newUser: User) => {
+
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
   };
@@ -48,7 +48,7 @@ const [loading, setLoading] = useState(true);
     } catch (err) {
       console.error('Backend logout error:', err);
     } finally {
-     localStorage.removeItem('token')
+
       localStorage.removeItem('user');
       setUser(null);
       window.location.href = '/login';

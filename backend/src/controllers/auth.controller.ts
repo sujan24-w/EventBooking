@@ -87,8 +87,8 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
     );
      res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure:  true,   //process.env.NODE_ENV === "production",
+      sameSite: true, //process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
     });
@@ -164,8 +164,8 @@ const  login =  async (req:Request , res:Response): Promise<void>=>{
 const logout =  async (req:Request, res:Response):Promise<void>=>{
    res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,//process.env.NODE_ENV === "production",
+    sameSite: "none",
     path: "/",
   });
 

@@ -28,8 +28,8 @@ export default function LoginPage() {
       
       const data = response.data;
 
-      login(data.token, data.user);
-      console.log("user=", data.user);
+      login( data.user);
+      console.log("user", data.user);
 
       // Smart Redirect based on Role
       if (data.user.role === 'ADMIN') {
