@@ -85,9 +85,14 @@ export default function AdminDashboardContent() {
       title: 'Permanent Delete Event?',
       description: `WARNING: "${title}" will be permanently deleated from database?`,
       action: async () => {
+        try{
         const res = await api.delete(`/admin/harddelete/${id}`);
         showFeedback('success', res.data.message || 'Event Permanently deleted !!!');
         fetchAdminData();
+        }catch(error:any){
+          const errorMessage = error.response?.data?.message || 'Cannot permanently delete event with existing bookings.';
+          showFeedback('error', errorMessage);
+        }
       },
     });
   };
@@ -201,13 +206,27 @@ export default function AdminDashboardContent() {
                   <td className="p-4 text-slate-500 text-xs">
                     {new Date(evt.starts_at).toLocaleDateString()}
                   </td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
-                      evt.is_cancelled ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {evt.is_cancelled ? 'Cancelled' : evt.event_status}
-                    </span>
-                  </td>
+                 <td className="p-4">
+  {evt.is_deleted ? (
+    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+      Deleted (Archived)
+    </span>
+  ) : evt.is_cancelled ? (
+    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700">
+      Cancelled
+    </span>
+  ) : (
+    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+      evt.event_status === 'COMPLETED'
+        ? 'bg-blue-100 text-blue-700'
+        : evt.event_status === 'UPCOMING'
+        ? 'bg-emerald-100 text-emerald-700'
+        : 'bg-indigo-100 text-indigo-700'
+    }`}>
+      {evt.event_status || 'Active'}
+    </span>
+  )}
+</td>
                   <td className="p-4 text-slate-600 text-xs font-medium">
                     {evt.available_seats} / {evt.total_seats} left
                   </td>
@@ -244,7 +263,7 @@ export default function AdminDashboardContent() {
                           onClick={() => handleHardDeleteEvent(evt.id, evt.title)}
                           className="px-3 py-1.5 bg-rose-900 hover:bg-rose-950 text-white text-xs font-semibold rounded-lg transition"
                         >
-                          Purge
+                          Delet Event 
                         </button>
                       </>
                     ) : (
@@ -252,7 +271,7 @@ export default function AdminDashboardContent() {
                         onClick={() => handleSoftDeleteEvent(evt.id, evt.title)}
                         className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg transition"
                       >
-                        Delete
+                         soft Delete
                       </button>
                     )}
                   </td>
