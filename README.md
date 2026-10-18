@@ -8,17 +8,6 @@ Backend API (Render): https://eventbooking-pq7r.onrender.com
 GitHub Repository: https://github.com/sujan24-w
 
 
-## 🛠️ 2. Tech Stack
-
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Frontend** | **Next.js + TypeScript** | Server-rendered pages, client routing, and responsive UI |
-| **Styling** | **Tailwind CSS** | Clean, mobile-friendly design with fallback graphics |
-| **Backend** | **Node.js + Express (TypeScript)** | RESTful API with explicit transaction management |
-| **Database** | **Supabase (PostgreSQL)** | Relational storage with ACID row-level locking (`pg.Pool`) |
-| **Authentication**| **JWT in HTTP-only Cookies** | Cross-domain cookie authentication (`SameSite=None`, `Secure`) |
-
----
 
 
 ### Test Credentials
@@ -31,56 +20,19 @@ GitHub Repository: https://github.com/sujan24-w
 ---
 
 
+## 🛠️ 2. Tech Stack
 
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | **Next.js + TypeScript** | Server-rendered pages, client routing, and responsive UI |
+| **Styling** | **Tailwind CSS** | Clean, mobile-friendly design with fallback graphics |
+| **Backend** | **Node.js + Express (TypeScript)** | RESTful API with explicit transaction management |
+| **Database** | **Supabase (PostgreSQL)** | Relational storage with ACID row-level locking (`pg.Pool`) |
+| **Authentication**| **JWT in HTTP-only Cookies** | Cross-domain cookie authentication (`SameSite=None`, `Secure`) |
 
+---
 
-
-## 🔒 3. Concurrency-Safe Capacity Enforcement & Anti-Overselling Deep Dive
-
-### The Problem: Race Conditions & Ticket Overselling
-When an event has **1 seat remaining** and two attendees (User A and User B) click "Book Now" at the exact same millisecond:
-1. User A reads available seats: `1 > 0` (True)
-2. User B reads available seats: `1 > 0` (True)
-3. User A inserts booking #1 (Capacity reached)
-4. User B inserts booking #2 (**OVERSELL ERROR: 2 seats sold for capacity 1!**)
-
-
-
-
-
-
-## 💻  Setup & Run Instructions
-
-### Prerequisites
-- Nodeejs v22.16.0
-- Supabase PostgreSQL  pool  coonecting String 
-
-### Step 1: Database Migration & Seeding
-```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-npm install
-
-# Run database schema migration
-npm run migrate
-
-# (Optional) Seed initial demo accounts and sample events
-npm run seed
-```
-
-# 🗄️ 4. Data Model & Architecture
-### The application uses three core PostgreSQL tables:
-
-- users: Stores user accounts, hashed passwords (bcryptjs), and user roles (ADMIN vs USER).
-
- - events: Stores event details (title, venue, starts_at, total_seats, is_cancelled, is_deleted).
-
-- bookings: Connects users to events, enforcing status (ACTIVE vs CANCELLED) to prevent duplicate seat reservations.
-
-
-
+##  3💻  Setup & Locally Run Instructions
 ### Step I: Start Backend Server
 ```bash
 cd backend
@@ -98,6 +50,58 @@ npm install
 npm run dev
 # Frontend running at http://localhost:5173
 ```
+
+
+### Prerequisites
+- Nodeejs v22.16.0
+- Supabase PostgreSQL  pool  coonecting String 
+
+### Step 1: Database Migration & Seeding
+```bash
+# Navigate to backend
+cd backend
+
+# Install dependencies
+npm install
+
+
+
+# Run database schema migration
+npm run migrate
+
+# (Optional) Seed initial demo accounts and sample events
+npm run seed
+```
+
+
+# 🗄️ 4. Data Model & Architecture
+### The application uses three core PostgreSQL tables:
+
+- users: Stores user accounts, hashed passwords (bcryptjs), and user roles (ADMIN vs USER).
+
+ - events: Stores event details (title, venue, starts_at, total_seats, is_cancelled, is_deleted).
+
+- bookings: Connects users to events, enforcing status (ACTIVE vs CANCELLED) to prevent duplicate seat reservations.
+
+
+## 📡 5. API Endpoints
+
+### 🔑 Authentication
+* **`POST /api/auth/register`** – Register a new account.
+* **`POST /api/auth/login`** – Login and set HTTP-only authentication cookie.
+* **`POST /api/auth/logout`** – Clear auth cookie.
+
+### 📅 Events
+* **`GET /api/events`** – List events with search and server-side pagination.
+* **`POST /api/events`** – Create new event (Admin only).
+* **`PUT /api/events/:id`** – Edit event details (Admin only).
+* **`DELETE /api/events/:id`** – Delete event (Admin only).
+* **`GET /api/events/:id/attendees`** – View registered attendees (Admin only).
+
+### 🎟️ Bookings
+* **`POST /api/events/:id/book`** – Concurrency-safe seat reservation (`USER` only).
+* **`GET /api/bookings/my`** – Retrieve personal active/past bookings.
+* **`DELETE /api/bookings/:id`** – Cancel active booking and free up capacity.
 
 ```sql
 
@@ -117,22 +121,39 @@ WHERE status = 'ACTIVE';
 ```
 
 
----
-# Features
-Event Browsing & Booking: Browse upcoming events, view details, and book seats in real time.
+## 🔮 . Known Issues
 
-User Dashboard: View and manage personal event bookings.
+* **Render Free Tier Cold Starts:** The backend API on Render's free tier spins down after periods of inactivity, causing an initial ~30-second latency on the first request.
 
-Responsive UI: Clean, modern interface built with React, TypeScript, and Tailwind CSS.
-
-Dynamic Fallbacks: Automated image fallbacks for events without custom cover photos.
 ---
 
+## 🤖 7. AI Usage Disclosure
+
+In accordance with transparent development standards, AI tools were leveraged to assist with specific workflow stages:
+
+* **Perplexity:** Used for initial schema design research and database architectural planning.
+* **Gemini:** Used for debugging cross-domain cookie transmission issues (`SameSite=None`, CORS, and `withCredentials` behavior between Vercel and Render).
+* **ChatGPT & Gemini:** Used for Tailwind CSS layout structure and boilerplate test suite configurations.
+* *All core business rules, ACID database transactions (`SELECT ... FOR UPDATE`), row-level concurrency mechanics, and express error handlers were hand-coded, verified, and audited.*
+
+---
 
 
-# 🔒 Concurrency Control & Database Locking Deep Dive
+### 🔑 8. Logins & Role-Based Access Control (RBAC)
+* **Admin Login (`admin@eventbook.com` / `eventbooksujan@2026`):** Provides administrative privileges to oversee platform metrics, create/edit/cancel/purge events, and inspect all user bookings via `/api/admin/*`.
+* **User Login (`sagar@eventbook.com` / `UserPassword123!`):** Provides standard user access to browse active events, execute secure seat bookings, and manage personal reservations.
+* *Why:* Separation of concerns ensures core administrative tasks and data mutations are strictly protected from standard user interference.
 
- To meet Section 11 (Bonus) and fulfill core anti-overselling business rules, the backend implements explicit PostgreSQL row-level locks (SELECT ... FOR UPDATE) inside an ACID database transaction.
+---
+
+## 🔒 6. Concurrency-Safe Capacity Enforcement & Anti-Overselling Deep Dive
+
+### The Problem: Race Conditions & Ticket Overselling
+When an event has **1 seat remaining** and two attendees (User A and User B) click "Book Now" at the exact same millisecond:
+1. User A reads available seats: `1 > 0` (True)
+2. User B reads available seats: `1 > 0` (True)
+3. User A inserts booking #1 (Capacity reached)
+4. User B inserts booking #2 (**OVERSELL ERROR: 2 seats sold for capacity 1!**)
 
  ```sql
  // 1. Connect client and begin transaction
@@ -164,44 +185,22 @@ if (event.total_seats - activeBookings <= 0) {
 await client.query("COMMIT");
  ```
 
-## 📡 6. API Endpoints
 
-### 🔑 Authentication
-* **`POST /api/auth/register`** – Register a new account.
-* **`POST /api/auth/login`** – Login and set HTTP-only authentication cookie.
-* **`POST /api/auth/logout`** – Clear auth cookie.
+## Tools Used & Their Purposes
+ * Next.js (App Router): Frontend framework for server/client rendering and routing.
 
-### 📅 Events
-* **`GET /api/events`** – List events with search and server-side pagination.
-* **`POST /api/events`** – Create new event (Admin only).
-* **`PUT /api/events/:id`** – Edit event details (Admin only).
-* **`DELETE /api/events/:id`** – Delete event (Admin only).
-* **`GET /api/events/:id/attendees`** – View registered attendees (Admin only).
+*  Express.js & Node.js: Backend server runtime and middleware routing architecture.
 
-### 🎟️ Bookings
-* **`POST /api/events/:id/book`** – Concurrency-safe seat reservation (`USER` only).
-* **`GET /api/bookings/my`** – Retrieve personal active/past bookings.
-* **`DELETE /api/bookings/:id`** – Cancel active booking and free up capacity.
+*  PostgreSQL & Supabase: Relational database for ACID transactions and persistent storage.
 
+*  Axios: HTTP client configured with credentials and Next.js rewrite proxy for secure first-party cookie transmission.
 
+*  Jest & Supertest: Automated unit and integration testing frameworks for business logic and endpoint validation.
 
----
+*  Tailwind CSS: Utility-first CSS framework for responsive UI styling.
 
-## 🤖 7. AI Usage Disclosure
-
-In accordance with transparent development standards, AI tools were leveraged to assist with specific workflow stages:
-
-* **Perplexity:** Used for initial schema design research and database architectural planning.
-* **Gemini:** Used for debugging cross-domain cookie transmission issues (`SameSite=None`, CORS, and `withCredentials` behavior between Vercel and Render).
-* **ChatGPT & Gemini:** Used for Tailwind CSS layout structure and boilerplate test suite configurations.
-* *All core business rules, ACID database transactions (`SELECT ... FOR UPDATE`), row-level concurrency mechanics, and express error handlers were hand-coded, verified, and audited.*
-
----
-
-## 🔮 8. Known Issues & Next Steps
-
-* **Render Free Tier Cold Starts:** The backend API on Render's free tier spins down after periods of inactivity, causing an initial ~30-second latency on the first request.
 * **Future Enhancements:** 
   * Email confirmation receipts featuring dynamic QR codes for physical venue check-ins.
   * Redis-based rate limiting on authentication and booking endpoints.
   * Waitlist automation system to automatically grant seats when active bookings are cancelled.
+---
