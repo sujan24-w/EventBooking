@@ -21,7 +21,7 @@ console.log(token);
     if (!token) {
       res.status(401).json({
         success: false,
-        message: "Authentication required",
+        message: "Authentication required,no cookie  token found",
       });
       return;
     }

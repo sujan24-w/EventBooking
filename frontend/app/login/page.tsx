@@ -29,7 +29,6 @@ export default function LoginPage() {
       const data = response.data;
 
       login( data.user);
-      console.log("user", data.user);
 
       // Smart Redirect based on Role
       if (data.user.role === 'ADMIN') {
@@ -67,6 +66,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete='email'
               placeholder="you@example.com"
               className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 outline-none text-slate-900 text-sm"
             />
@@ -79,6 +79,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete='current-password'
               placeholder="••••••••"
               className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 outline-none text-slate-900 text-sm"
             />
